@@ -25,19 +25,16 @@ This example does a test of the TCP client capability:
 SmartConfig is still beta and kind of works but is not fully vetted!
 It might not work on all networks!
 */
-
 #include <Adafruit_CC3000.h>
-#include "WaterPump.h"
 #include <ccspi.h>
 #include <SPI.h>
 #include <string.h>
 #include "utility/debug.h"
+#include <Servo.h>
+#include "ServoControl.h"
 
-
-// Water Pump pin
-int wpPin = 6;
-// Water Pump Input pin
-int readPin = 0;
+// Servo pin
+#define servoPin 6
 // These are the interrupt and control pins
 #define ADAFRUIT_CC3000_IRQ   3  // MUST be an interrupt pin!
 // These can be any two pins
@@ -48,17 +45,20 @@ int readPin = 0;
 Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ, ADAFRUIT_CC3000_VBAT,
                          SPI_CLOCK_DIVIDER); // you can change this clock speed
 
-#define WLAN_SSID       "ATT-WIFI-4857"           // cannot be longer than 32 characters!
-#define WLAN_PASS       "84889775"
+#define WLAN_SSID       "ATT-WIFI-3279"           // cannot be longer than 32 characters!
+#define WLAN_PASS       "93123907"
 
 // Security can be WLAN_SEC_UNSEC, WLAN_SEC_WEP, WLAN_SEC_WPA or WLAN_SEC_WPA2
 #define WLAN_SECURITY   WLAN_SEC_WPA2
 
 #define IDLE_TIMEOUT_MS  3000      // Amount of time to wait (in milliseconds) with no data 
 #define REPORTING_INTERVAL_MS  3000      // Interval between data reporting events (in milliseconds)
+// received before closing the connection.  If you know the server
+// you're accessing is quick to respond, you can reduce this value.
 
 // Domain name for the open bms server
 #define OBMSSERVER "openbms.elomar.me"
+
 
 /**************************************************************************/
 /*!
@@ -68,10 +68,14 @@ Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ
 /**************************************************************************/
 
 uint32_t ip;
+Servo servo1;   // Creating servo1 object
+int level = 175;  // This value is fan's lowest speed
 
 void setup(void)
 {
-  pinMode(wpPin,OUTPUT);
+  servo1.attach(servoPin);   
+  servo1.write(level);
+  
   Serial.begin(115200);
   Serial.println(F("Hello, CC3000!\n"));
 
@@ -111,17 +115,17 @@ void setup(void)
   ip = 0;
   // Try looking up the website's IP address
   Serial.print(OBMSSERVER); Serial.print(F(" -> "));
-  while (ip == 0) {
-    if (! cc3000.getHostByName(OBMSSERVER, &ip)) {
-      Serial.println(F("Couldn't resolve!"));
-    }
-    delay(500);
-  }
+//  while (ip == 0) {
+//    if (! cc3000.getHostByName(OBMSSERVER, &ip)) {
+//      Serial.println(F("Couldn't resolve!"));
+//    }
+//    delay(500);
+//  }
 //  ip = cc3000.IP2U32(192, 168, 1, 51);
-//  ip = cc3000.IP2U32(54, 193, 107, 213);
+  ip = cc3000.IP2U32(192.168.1.67);
 // ip = cc3000.IP2U32(10,0,0,137);
-  cc3000.printIPdotsRev(ip);
-
+ // cc3000.printIPdotsRev(ip);
+  Serial.println("Attempting to connect...");
   // Optional: Do a ping test on the website
   /*
   Serial.print(F("\n\rPinging ")); cc3000.printIPdotsRev(ip); Serial.print("...");
@@ -132,7 +136,7 @@ void setup(void)
   /* Try connecting to the website.
      Note: HTTP/1.1 protocol is used to keep the server from closing the connection before all data is read.
   */
-  Adafruit_CC3000_Client www = cc3000.connectTCP(ip, 6700);
+  Adafruit_CC3000_Client www = cc3000.connectTCP(ip, 6001);
 
   Serial.println(F("-------------------------------------"));
 
@@ -142,18 +146,12 @@ void setup(void)
   String readBuffer = "";
   int i = 0;
   while (www.connected()) {
-    if(millis() - lastReport > REPORTING_INTERVAL_MS){
-      Serial.println(F("Sending data..."));
-        float value = WaterPumpPower(readPin);
-        String svalue = String(value,2);
-        char* buffer;
-        svalue.toCharArray(buffer, svalue.length(), 0);
-        www.fastrprint(F("power="));
-        www.fastrprint(buffer);
-        www.fastrprint(F("W"));
-      lastReport = millis();   
-    }
-    
+//    if(millis() - lastReport > REPORTING_INTERVAL_MS){
+//      Serial.println(F("Sending data..."));
+//        www.fastrprint(F("power=50W"));
+//      lastReport = millis();   
+//    }
+//    
     if (www.available()) {
       char command = www.read();
       readBuffer += command;
@@ -161,13 +159,13 @@ void setup(void)
     }
     else{
       if(i == 1){
+        Serial.println(readBuffer);
         if(readBuffer.indexOf('=') >= 0){
           String command = readBuffer.substring(0, readBuffer.indexOf('='));
           String value = readBuffer.substring(readBuffer.indexOf('=') + 1);
           if(command == "speed"){
-              //call servo function here
-              WaterPump(value.toFloat(), wpPin);
-              Serial.println("Pump Speed is " + value + ".");
+              ServoControl(value.toInt());
+              Serial.println("Fan Speed is " + value + ".");
           }
         }
         if(readBuffer == "action"){

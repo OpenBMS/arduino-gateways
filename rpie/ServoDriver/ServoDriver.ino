@@ -122,7 +122,7 @@ void setup(void)
 //    delay(500);
 //  }
 //  ip = cc3000.IP2U32(192, 168, 1, 51);
-  ip = cc3000.IP2U32(54, 193, 107, 213);
+  ip = cc3000.IP2U32(192.168.1.68);
 // ip = cc3000.IP2U32(10,0,0,137);
  // cc3000.printIPdotsRev(ip);
   Serial.println("Attempting to connect...");
@@ -136,7 +136,7 @@ void setup(void)
   /* Try connecting to the website.
      Note: HTTP/1.1 protocol is used to keep the server from closing the connection before all data is read.
   */
-  Adafruit_CC3000_Client www = cc3000.connectTCP(ip, 6600);
+  Adafruit_CC3000_Client www = cc3000.connectTCP(ip, 6001);
 
   Serial.println(F("-------------------------------------"));
 

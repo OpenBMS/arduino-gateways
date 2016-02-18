@@ -30,6 +30,7 @@ It might not work on all networks!
 #include <SPI.h>
 #include <string.h>
 #include "utility/debug.h"
+#include "BatteryStatus.h"
 
 // These are the interrupt and control pins
 #define ADAFRUIT_CC3000_IRQ   3  // MUST be an interrupt pin!
@@ -43,10 +44,6 @@ Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ
 
 #define WLAN_SSID       "ATT-WIFI-4857"           // cannot be longer than 32 characters!
 #define WLAN_PASS       "84889775"
-//#define WLAN_SSID       "visitor"           // cannot be longer than 32 characters!
-//#define WLAN_PASS       ""
-//#define WLAN_SSID       "CanavialDeRola-2.4"           // cannot be longer than 32 characters!
-//#define WLAN_PASS       "ordemeprogresso"
 
 // Security can be WLAN_SEC_UNSEC, WLAN_SEC_WEP, WLAN_SEC_WPA or WLAN_SEC_WPA2
 #define WLAN_SECURITY   WLAN_SEC_WPA2
@@ -56,9 +53,8 @@ Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ
 // received before closing the connection.  If you know the server
 // you're accessing is quick to respond, you can reduce this value.
 
-// What page to grab!
-#define WEBSITE      "www.adafruit.com"
-#define WEBPAGE      "/testwifi/index.html"
+// Domain name for the open bms server
+#define OBMSSERVER "openbms.elomar.me"
 
 
 /**************************************************************************/
@@ -72,6 +68,7 @@ uint32_t ip;
 
 void setup(void)
 {
+  int analogPin = 0;
   Serial.begin(115200);
   Serial.println(F("Hello, CC3000!\n"));
 
@@ -110,15 +107,15 @@ void setup(void)
 
   ip = 0;
   // Try looking up the website's IP address
-  Serial.print(WEBSITE); Serial.print(F(" -> "));
+  Serial.print(OBMSSERVER); Serial.print(F(" -> "));
   //  while (ip == 0) {
-  //    if (! cc3000.getHostByName(WEBSITE, &ip)) {
+  //    if (! cc3000.getHostByName(OBMSSERVER, &ip)) {
   //      Serial.println(F("Couldn't resolve!"));
   //    }
   //    delay(500);
   //  }
 //  ip = cc3000.IP2U32(192, 168, 1, 51);
-  ip = cc3000.IP2U32(54, 193, 107, 213);
+  ip = cc3000.IP2U32(192.168.1.68);
 // ip = cc3000.IP2U32(10,0,0,137);
   cc3000.printIPdotsRev(ip);
 
@@ -132,18 +129,7 @@ void setup(void)
   /* Try connecting to the website.
      Note: HTTP/1.1 protocol is used to keep the server from closing the connection before all data is read.
   */
-  Adafruit_CC3000_Client www = cc3000.connectTCP(ip, 6700);
-//  if (www.connected()) {
-//    www.fastrprint(F("uuid=5BSY101SYA20MW4B&"));
-//    //    www.fastrprint(F("timestamp=&"));
-//    www.fastrprint(F("type=Voltage&"));
-//    www.fastrprint(F("value=12&"));
-//    www.fastrprint(F("unit=Volts&"));
-//    www.println();
-//  } else {
-//    Serial.println(F("Connection failed"));
-//    return;
-//  }
+  Adafruit_CC3000_Client www = cc3000.connectTCP(ip, 6000);
 
   Serial.println(F("-------------------------------------"));
 
@@ -155,39 +141,39 @@ void setup(void)
   while (www.connected()) {
     if(millis() - lastReport > REPORTING_INTERVAL_MS){
       Serial.println(F("Sending data..."));
-//      www.fastrprint(F("uuid=5BSY101SYA20MW4B&"));
-//      www.fastrprint(F("timestamp=&"));
-//      www.fastrprint(F("type=Voltage&"));
-//      www.fastrprint(F("value=12"));
-//      www.fastrprint(F("Battery"));
-//      www.println();
-//      www.fastrprint(F("voltage=12V"));
-        www.fastrprint(F("power=50W"));
-      lastReport = millis();   
+        float value = BatteryStatus(analogPin);
+        String svalue = String(value,2);
+        char* carr = new char[16];
+        strcpy(carr,svalue.c_str());
+        www.fastrprint(F("voltage="));
+        www.fastrprint(carr);
+        www.fastrprint(F("V"));
+        Serial.print(carr);
+      lastReport = millis();    
     }
     
-    if (www.available()) {
-      char command = www.read();
-      readBuffer += command;
-      i = 1;
-    }
-    else{
-      if(i == 1){
-        if(readBuffer.indexOf('=') >= 0){
-          String command = readBuffer.substring(0, readBuffer.indexOf('='));
-          String value = readBuffer.substring(readBuffer.indexOf('=') + 1);
-          if(command == "speed"){
-              //call servo function here
-              Serial.println("Pump Speed is " + value + ".");
-          }
-        }
-        if(readBuffer == "action"){
-          Serial.println("COMMAND!");
-        }
-        readBuffer = "";
-        i = 0;
-      }
-    }
+//    if (www.available()) {
+//      char command = www.read();
+//      readBuffer += command;
+//      i = 1;
+//    }
+//    else{
+//      if(i == 1){
+//        if(readBuffer.indexOf('=') >= 0){
+//          String command = readBuffer.substring(0, readBuffer.indexOf('='));
+//          String value = readBuffer.substring(readBuffer.indexOf('=') + 1);
+//          if(command == "speed"){
+//              //call servo function here
+//              Serial.println("Pump Speed is " + value + ".");
+//          }
+//        }
+//        if(readBuffer == "action"){
+//          Serial.println("COMMAND!");
+//        }
+//        readBuffer = "";
+//        i = 0;
+//      }
+//    }
   }
   Serial.println(F("Connection failed"));
   www.close();

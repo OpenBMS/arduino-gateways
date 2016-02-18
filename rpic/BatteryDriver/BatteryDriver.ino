@@ -42,8 +42,8 @@ It might not work on all networks!
 Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ, ADAFRUIT_CC3000_VBAT,
                          SPI_CLOCK_DIVIDER); // you can change this clock speed
 
-#define WLAN_SSID       "ATT-WIFI-4857"           // cannot be longer than 32 characters!
-#define WLAN_PASS       "84889775"
+#define WLAN_SSID       "ATT-WIFI-3279"           // cannot be longer than 32 characters!
+#define WLAN_PASS       "93123907"
 
 // Security can be WLAN_SEC_UNSEC, WLAN_SEC_WEP, WLAN_SEC_WPA or WLAN_SEC_WPA2
 #define WLAN_SECURITY   WLAN_SEC_WPA2
@@ -115,7 +115,7 @@ void setup(void)
   //    delay(500);
   //  }
 //  ip = cc3000.IP2U32(192, 168, 1, 51);
-  ip = cc3000.IP2U32(54, 193, 107, 213);
+  ip = cc3000.IP2U32(192.168.1.67);
 // ip = cc3000.IP2U32(10,0,0,137);
   cc3000.printIPdotsRev(ip);
 
