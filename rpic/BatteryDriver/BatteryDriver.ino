@@ -68,7 +68,7 @@ uint32_t ip;
 
 void setup(void)
 {
-  int analogPin = 0;
+  int analogPin = 1;
   Serial.begin(115200);
   Serial.println(F("Hello, CC3000!\n"));
 
