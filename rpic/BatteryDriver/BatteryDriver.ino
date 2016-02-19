@@ -115,7 +115,7 @@ void setup(void)
   //    delay(500);
   //  }
 //  ip = cc3000.IP2U32(192, 168, 1, 51);
-  ip = cc3000.IP2U32(192.168.1.67);
+  ip = cc3000.IP2U32(192,168,1,67);
 // ip = cc3000.IP2U32(10,0,0,137);
   cc3000.printIPdotsRev(ip);
 
@@ -141,15 +141,15 @@ void setup(void)
   while (www.connected()) {
     if(millis() - lastReport > REPORTING_INTERVAL_MS){
       Serial.println(F("Sending data..."));
-        float value = BatteryStatus(analogPin);
-        String svalue = String(value,2);
-        char* carr = new char[16];
-        strcpy(carr,svalue.c_str());
-        www.fastrprint(F("voltage="));
-        www.fastrprint(carr);
-        www.fastrprint(F("V"));
-        Serial.print(carr);
-      lastReport = millis();    
+      String data = "voltage=";
+      float value = BatteryStatus(analogPin);
+      String svalue = String(value,2);
+      data = data + svalue + 'V';
+      Serial.print(data);
+      char* carr = new char[16];
+      strcpy(carr,data.c_str());
+      www.fastrprint(carr);       
+      lastReport = millis();
     }
     
 //    if (www.available()) {

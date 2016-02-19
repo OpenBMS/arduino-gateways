@@ -122,7 +122,7 @@ void setup(void)
 //    delay(500);
 //  }
 //  ip = cc3000.IP2U32(192, 168, 1, 51);
-  ip = cc3000.IP2U32(192.168.1.68);
+  ip = cc3000.IP2U32(192,168,1,68);
 // ip = cc3000.IP2U32(10,0,0,137);
  // cc3000.printIPdotsRev(ip);
   Serial.println("Attempting to connect...");
